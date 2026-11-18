@@ -1,23 +1,82 @@
-name: Publish Horizon to GitHub Pages
+name: Horizon Chinese daily briefing
 
 on:
+  schedule:
+    - cron: '10 7 * * *'
+      timezone: Asia/Shanghai
   workflow_dispatch:
 
 concurrency:
   group: horizon-pages
   cancel-in-progress: false
 
+env:
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write
       pages: read
+    outputs:
+      edition: ${{ steps.edition.outputs.date }}
     steps:
       - name: Check out the site
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          persist-credentials: false
+          ref: main
+
+      - name: Determine the edition date
+        id: edition
+        run: |
+          edition=$(TZ=Asia/Shanghai date +%F)
+          post="docs/_posts/$edition-summary-zh.md"
+          printf 'date=%s\npath=%s\n' "$edition" "$post" >> "$GITHUB_OUTPUT"
+          if [[ -f "$post" ]] && head -n 7 "$post" | grep -Fxq 'generated_by: horizon-pages'; then
+            echo 'generate=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'generate=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up uv
+        if: steps.edition.outputs.generate == 'true'
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.13.6'
+          python-version: '3.12'
+
+      - name: Install Horizon
+        if: steps.edition.outputs.generate == 'true'
+        run: uv sync --locked
+
+      - name: Generate the Chinese digest
+        if: steps.edition.outputs.generate == 'true'
+        env:
+          AUTODL_API_KEY: ${{ secrets.AUTODL_API_KEY }}
+          EDITION_DATE: ${{ steps.edition.outputs.date }}
+        run: |
+          if [[ -z "$AUTODL_API_KEY" ]]; then
+            echo '::error::Add the AUTODL_API_KEY repository secret to generate reports.'
+            exit 1
+          fi
+          uv run --no-sync python scripts/pages_digest.py generate "$EDITION_DATE"
+
+      - name: Archive the digest
+        if: steps.edition.outputs.generate == 'true'
+        env:
+          EDITION_DATE: ${{ steps.edition.outputs.date }}
+          POST_PATH: ${{ steps.edition.outputs.path }}
+        run: |
+          git add -f -- "$POST_PATH"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Archive the Horizon digest for $EDITION_DATE"
+          git push origin HEAD:main
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
@@ -40,7 +99,60 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      site_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Publish the site
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  email:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Check mail configuration
+        id: mail
+        env:
+          QQ_SMTP_EMAIL: ${{ secrets.QQ_SMTP_EMAIL }}
+          QQ_SMTP_AUTH_CODE: ${{ secrets.QQ_SMTP_AUTH_CODE }}
+        run: |
+          if [[ -z "$QQ_SMTP_EMAIL" || -z "$QQ_SMTP_AUTH_CODE" ]]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::Mail delivery awaits the QQ SMTP authorization code.'
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the published digest
+        if: steps.mail.outputs.ready == 'true'
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+
+      - name: Set up uv
+        if: steps.mail.outputs.ready == 'true'
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.13.6'
+          python-version: '3.12'
+
+      - name: Install Horizon
+        if: steps.mail.outputs.ready == 'true'
+        run: uv sync --locked
+
+      - name: Email the digest and record delivery
+        if: steps.mail.outputs.ready == 'true'
+        env:
+          QQ_SMTP_EMAIL: ${{ secrets.QQ_SMTP_EMAIL }}
+          QQ_SMTP_AUTH_CODE: ${{ secrets.QQ_SMTP_AUTH_CODE }}
+          HORIZON_SITE_URL: ${{ needs.deploy.outputs.site_url }}
+          EDITION_DATE: ${{ needs.build.outputs.edition }}
+        run: |
+          uv run --no-sync python scripts/pages_digest.py email "$EDITION_DATE"
+          git add -- data/pages-last-emailed.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Record Horizon email delivery for $EDITION_DATE"
+          git push origin HEAD:main

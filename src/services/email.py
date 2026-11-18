@@ -11,7 +11,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.policy import default
-from email.utils import parseaddr
+from email.utils import formataddr, parseaddr
 from typing import List
 
 try:
@@ -215,10 +215,10 @@ class EmailManager:
         context = ssl.create_default_context()
         if self.config.smtp_port == 465:
             return smtplib.SMTP_SSL(
-                self.config.smtp_server, self.config.smtp_port, context=context
+                self.config.smtp_server, self.config.smtp_port, context=context, timeout=30
             )
 
-        server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
+        server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port, timeout=30)
         try:
             server.ehlo()
             server.starttls(context=context)
@@ -228,10 +228,10 @@ class EmailManager:
             raise
         return server
 
-    def send_daily_summary(self, summary_md: str, subject: str, subscribers: List[str]):
-        """Sends the daily summary to all subscribers."""
+    def send_daily_summary(self, summary_md: str, subject: str, subscribers: List[str]) -> int:
+        """Send the summary and return the number of SMTP-accepted deliveries."""
         if not self.config.enabled or not subscribers:
-            return
+            return 0
 
         cleaned_summary = clean_app_summary_markdown(summary_md)
         safe_summary = _prepare_email_markdown(cleaned_summary)
@@ -239,6 +239,10 @@ class EmailManager:
             _render_email_markdown(safe_summary)
             if markdown
             else f"<pre>{safe_summary}</pre>"
+        )
+        unsubscribe = (
+            f'<p>To unsubscribe, please reply with "{html.escape(self.config.unsubscribe_keyword)}"</p>'
+            if self.config.imap_enabled else ""
         )
 
         html_body = f"""
@@ -258,13 +262,14 @@ class EmailManager:
         <body>
             {html_content}
             <div class="footer">
-                <p>Sent by {self.config.sender_name}</p>
-                <p>To unsubscribe, please reply with "{self.config.unsubscribe_keyword}"</p>
+                <p>Sent by {html.escape(self.config.sender_name)}</p>
+                {unsubscribe}
             </div>
         </body>
         </html>
         """
 
+        sent = 0
         try:
             with self._open_smtp() as server:
                 server.login(
@@ -274,9 +279,7 @@ class EmailManager:
                 for subscriber in subscribers:
                     msg = MIMEMultipart("alternative")
                     msg["Subject"] = subject
-                    msg["From"] = (
-                        f"{self.config.sender_name} <{self.config.email_address}>"
-                    )
+                    msg["From"] = formataddr((self.config.sender_name, self.config.email_address))
                     msg["To"] = subscriber
 
                     text_part = MIMEText(cleaned_summary, "plain")
@@ -286,13 +289,17 @@ class EmailManager:
                     msg.attach(html_part)
 
                     try:
-                        server.send_message(msg)
-                        logger.info(f"Sent summary to {subscriber}")
+                        if server.send_message(msg):
+                            logger.error("SMTP refused the summary recipient")
+                        else:
+                            sent += 1
+                            logger.info(f"Sent summary to {subscriber}")
                     except Exception as e:
                         logger.error(f"Failed to send to {subscriber}: {e}")
 
         except Exception as e:
             logger.error(f"SMTP Error: {e}")
+        return sent
 
     def _send_reply(self, to_email: str, subject: str, body: str):
         """Helper to send a simple reply."""

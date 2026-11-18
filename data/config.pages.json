@@ -1,0 +1,32 @@
+{
+  "ai": {
+    "provider": "deepseek",
+    "model": "DeepSeek-V4.1-Flash-1017",
+    "base_url": "https://www.autodl.art/api/v1",
+    "api_key_env": "AUTODL_API_KEY",
+    "languages": ["zh"],
+    "max_tokens": 8192,
+    "analysis_concurrency": 2,
+    "enrichment_concurrency": 2
+  },
+  "sources": {
+    "hackernews": {"enabled": false},
+    "reddit": {"enabled": false},
+    "telegram": {"enabled": false},
+    "rss": [
+      {
+        "name": "Simon Willison",
+        "url": "https://simonwillison.net/atom/everything/",
+        "profile": "tech-news"
+      },
+      {
+        "name": "OpenAI News",
+        "url": "https://openai.com/news/rss.xml",
+        "profile": "tech-news"
+      }
+    ]
+  },
+  "collection": {"time_window_hours": 24},
+  "digest": {"max_items": 5, "group_by": "profile"},
+  "processing": {"profile_settings": {"tech-news": {"threshold": 6.0}}}
+}
