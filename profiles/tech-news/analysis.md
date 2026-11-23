@@ -16,4 +16,6 @@ Consider technical depth, novelty, likely impact, source quality, relevance to s
 
 Prioritize documented AI model releases, open weights, useful API and pricing changes, credible research and benchmarks, agent and developer tools, and significant developments in chips, cloud computing, and data centers. Also prioritize consequential technology-company news, such as major funding, acquisitions, product or strategy shifts, and regulation affecting the industry. Routine promotions, shopping deals, minor gadget refreshes, and unsupported rumors belong below 5.
 
+Give particular attention to Codex, ChatGPT, Claude, and Claude Code. Cover significant releases, changes to features, access or usage limits, confirmed service incidents with broad impact, and community findings with evidence or reproducible examples. Score memes, personal support requests, and unsupported product comparisons below 5.
+
 Use three to five specific topic tags.

@@ -378,7 +378,7 @@ class TwitterConfig(BaseModel):
     """Twitter source configuration.
 
     Two modes are supported:
-    - "apify": Use Apify scweet actor (requires APIFY_TOKEN, more reliable)
+    - "apify": Use a configured Apify actor (requires APIFY_TOKEN)
     - "playwright": Use Playwright + browser cookies (free, no token needed)
 
     `keywords` uses Apify search mode. Playwright logs a warning and skips them.
@@ -398,6 +398,7 @@ class TwitterConfig(BaseModel):
     # Apify settings (used when mode == "apify")
     apify_token_env: str = "APIFY_TOKEN"
     actor_id: str = "altimis~scweet"
+    apify_max_total_charge_usd: Optional[float] = Field(default=None, gt=0)
     # Playwright settings (used when mode == "playwright")
     cookie_dir: str = "data"
     cookie_file_pattern: str = "x_cookies_*.json"

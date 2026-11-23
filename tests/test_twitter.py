@@ -141,6 +141,67 @@ def test_successful_fetch_returns_items(monkeypatch):
     assert result[0].profile == "twitter-profile"
 
 
+def test_xquik_batches_profiles_with_a_date_and_spending_limit(monkeypatch):
+    monkeypatch.setenv("APIFY_TOKEN", "test_token")
+    since = datetime(2026, 11, 22, tzinfo=timezone.utc)
+    tweet = {
+        "id": "40",
+        "text": "Codex release notes",
+        "createdAt": "Mon Nov 23 03:00:00 +0000 2026",
+        "url": "https://x.com/OpenAIDevs/status/40",
+        "author": {"username": "OpenAIDevs", "name": "OpenAI Developers"},
+        "conversationId": "39",
+        "likeCount": 20,
+        "retweetCount": 5,
+    }
+    starts = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Authorization"] == "Bearer test_token"
+        assert "token" not in request.url.params
+        if request.method == "POST":
+            assert request.url.path == "/v2/acts/xquik~x-tweet-scraper/runs"
+            assert request.url.params["maxTotalChargeUsd"] == "0.05"
+            assert 0 < int(request.url.params["timeout"]) < 180
+            starts.append(json.loads(request.content))
+            return httpx.Response(201, json=_run_resp())
+        if "/actor-runs/" in request.url.path:
+            return httpx.Response(200, json=_status_resp())
+        return httpx.Response(200, json=[
+            tweet,
+            {**tweet, "id": "38", "createdAt": "Sat Nov 21 04:00:00 +0000 2026"},
+        ])
+
+    config = _make_config(
+        users=["@OpenAIDevs", "claudeai"],
+        actor_id="xquik~x-tweet-scraper",
+        fetch_limit=40,
+        apify_max_total_charge_usd=0.05,
+    )
+
+    async def fetch():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await TwitterScraper(config, client).fetch(since)
+
+    result = asyncio.run(fetch())
+    assert starts == [{
+        "queryType": "Latest",
+        "maxItems": 40,
+        "mode": "profileTweets",
+        "twitterHandles": ["OpenAIDevs", "claudeai"],
+        "tweetTypes": {"excludeReplies": True, "excludeRetweets": True},
+        "sinceTime": int(since.timestamp()),
+    }]
+    assert result.status == "success"
+    [item] = result.items
+    assert item.id == "twitter:tweet:40"
+    assert str(item.url) == tweet["url"]
+    assert item.metadata["screen_name"] == "OpenAIDevs"
+    assert item.metadata["favorite_count"] == 20
+    assert item.metadata["retweet_count"] == 5
+    assert item.metadata["conversation_id"] == "39"
+
+
 def test_playwright_parse_tweet_propagates_profile():
     scraper = TwitterPlaywrightScraper(
         _make_config(profile="playwright-profile"), http_client=None

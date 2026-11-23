@@ -58,6 +58,7 @@ jobs:
       - name: Generate the Chinese digest
         if: steps.edition.outputs.generate == 'true'
         env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           AUTODL_API_KEY: ${{ secrets.AUTODL_API_KEY }}
           EDITION_DATE: ${{ steps.edition.outputs.date }}
         run: |

@@ -10,9 +10,30 @@
     "enrichment_concurrency": 2
   },
   "sources": {
-    "hackernews": {"enabled": false},
+    "hackernews": {
+      "enabled": true,
+      "fetch_top_stories": 12,
+      "min_score": 80,
+      "category": "tech-companies",
+      "profile": "tech-news"
+    },
     "reddit": {"enabled": false},
-    "telegram": {"enabled": false},
+    "telegram": {
+      "enabled": true,
+      "channels": [
+        {"channel": "AI_News_CN", "fetch_limit": 6, "category": "ai", "profile": "tech-news"},
+        {"channel": "zaihuapd", "fetch_limit": 8, "category": "tech-companies", "profile": "tech-news"}
+      ]
+    },
+    "twitter": {
+      "enabled": true,
+      "actor_id": "xquik~x-tweet-scraper",
+      "apify_max_total_charge_usd": 0.05,
+      "users": ["OpenAI", "OpenAIDevs", "ChatGPTapp", "AnthropicAI", "claudeai", "GoogleDeepMind", "deepseek_ai"],
+      "fetch_limit": 40,
+      "category": "ai",
+      "profile": "tech-news"
+    },
     "rss": [
       {
         "name": "Simon Willison",
@@ -23,6 +44,18 @@
       {
         "name": "OpenAI News",
         "url": "https://openai.com/news/rss.xml",
+        "category": "ai",
+        "profile": "tech-news"
+      },
+      {
+        "name": "OpenAI Codex Releases",
+        "url": "https://github.com/openai/codex/releases.atom",
+        "category": "ai",
+        "profile": "tech-news"
+      },
+      {
+        "name": "Claude Code Releases",
+        "url": "https://github.com/anthropics/claude-code/releases.atom",
         "category": "ai",
         "profile": "tech-news"
       },
