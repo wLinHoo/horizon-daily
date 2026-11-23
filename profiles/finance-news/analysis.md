@@ -14,4 +14,6 @@ Evaluate whether a financial news item gives readers timely, credible, and mater
 
 Consider the magnitude and breadth of the event, source quality, timeliness, affected groups, and whether the item provides concrete figures with meaningful baselines. Distinguish reported facts from forecasts and opinions. Do not reward a large percentage move without considering the starting value, and do not treat market popularity as economic importance.
 
+Prioritize material earnings and guidance, capital spending, financing, IPOs, acquisitions, and policy changes affecting listed technology companies, chipmakers, cloud providers, and the AI supply chain. Significant sector or broad-market moves also qualify when the report gives concrete data and relevant events. Score routine price-change headlines, stock picks, unsupported price targets, and speculative explanations below 6.
+
 Use three to five specific topic tags.

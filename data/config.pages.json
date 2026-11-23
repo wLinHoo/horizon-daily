@@ -17,16 +17,83 @@
       {
         "name": "Simon Willison",
         "url": "https://simonwillison.net/atom/everything/",
+        "category": "ai",
         "profile": "tech-news"
       },
       {
         "name": "OpenAI News",
         "url": "https://openai.com/news/rss.xml",
+        "category": "ai",
         "profile": "tech-news"
+      },
+      {
+        "name": "Google DeepMind",
+        "url": "https://deepmind.google/blog/rss.xml",
+        "category": "ai",
+        "profile": "tech-news"
+      },
+      {
+        "name": "Hugging Face Blog",
+        "url": "https://huggingface.co/blog/feed.xml",
+        "category": "ai",
+        "profile": "tech-news"
+      },
+      {
+        "name": "TechCrunch AI",
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "category": "ai",
+        "profile": "tech-news"
+      },
+      {
+        "name": "The Verge Tech",
+        "url": "https://www.theverge.com/rss/tech/index.xml",
+        "category": "tech-companies",
+        "profile": "tech-news"
+      },
+      {
+        "name": "SCMP Technology",
+        "url": "https://www.scmp.com/rss/36/feed",
+        "category": "tech-companies",
+        "profile": "tech-news"
+      },
+      {
+        "name": "NVIDIA Newsroom",
+        "url": "https://nvidianews.nvidia.com/cats/press_release.xml",
+        "category": "tech-companies",
+        "profile": "tech-news"
+      },
+      {
+        "name": "Investing.com Stock Market News",
+        "url": "https://www.investing.com/rss/news_25.rss",
+        "category": "markets",
+        "profile": "finance-news"
       }
-    ]
+    ],
+    "google_news": {
+      "enabled": true,
+      "query": "(Nasdaq OR \"AI stocks\" OR \"chip stocks\" OR Nvidia OR AMD OR Microsoft OR Alphabet OR Meta OR Amazon OR Apple OR TSMC OR ASML OR Alibaba OR Tencent OR Baidu) (earnings OR guidance OR \"capital spending\" OR regulation OR \"export controls\" OR acquisition OR IPO OR \"stock market\")",
+      "language": "en",
+      "country": "US",
+      "max_results": 12,
+      "category": "markets",
+      "profile": "finance-news"
+    }
   },
   "collection": {"time_window_hours": 24},
-  "digest": {"max_items": 5, "group_by": "profile"},
-  "processing": {"profile_settings": {"tech-news": {"threshold": 6.0}}}
+  "digest": {
+    "max_items": 14,
+    "group_by": "category",
+    "profile_order": ["tech-news", "finance-news"],
+    "category_groups": {
+      "ai": {"name": "AI 进展", "limit": 7, "categories": ["ai"]},
+      "tech-companies": {"name": "科技公司", "limit": 4, "categories": ["tech-companies"]},
+      "markets": {"name": "股市与市场", "limit": 4, "categories": ["markets"]}
+    }
+  },
+  "processing": {
+    "profile_settings": {
+      "tech-news": {"threshold": 5.0},
+      "finance-news": {"threshold": 6.0}
+    }
+  }
 }

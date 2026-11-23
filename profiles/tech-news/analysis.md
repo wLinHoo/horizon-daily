@@ -14,4 +14,6 @@ Evaluate the importance of timely technology news for readers interested in soft
 
 Consider technical depth, novelty, likely impact, source quality, relevance to software engineering and AI systems, and concrete supporting details. Treat substantive community debate as additional evidence of value, but do not equate popularity with technical importance. Do not reward exaggerated headlines.
 
+Prioritize documented AI model releases, open weights, useful API and pricing changes, credible research and benchmarks, agent and developer tools, and significant developments in chips, cloud computing, and data centers. Also prioritize consequential technology-company news, such as major funding, acquisitions, product or strategy shifts, and regulation affecting the industry. Routine promotions, shopping deals, minor gadget refreshes, and unsupported rumors belong below 5.
+
 Use three to five specific topic tags.
