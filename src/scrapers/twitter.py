@@ -6,6 +6,7 @@ import os
 import time
 from datetime import datetime, timezone
 from html import unescape
+from math import ceil
 from typing import List, Optional
 
 from dateutil.parser import isoparse
@@ -83,7 +84,9 @@ class TwitterScraper(BaseScraper):
         payload: dict,
         since: datetime,
     ) -> List[ContentItem]:
-        run_id, dataset_id = await self._start_run_with_payload(token, payload, since=since)
+        run_id, dataset_id = await self._start_run_with_payload(
+            token, payload, since=since
+        )
         if not run_id or not dataset_id:
             raise RuntimeError("Apify did not return a run and dataset ID")
         if not await self._wait_for_run(token, run_id):
@@ -104,11 +107,14 @@ class TwitterScraper(BaseScraper):
 
     @staticmethod
     def _xquik_payload(payload: dict, since: Optional[datetime]) -> dict:
-        actor_input = {"queryType": payload["search_sort"], "maxItems": payload["max_items"]}
+        max_items = payload["max_items"]
+        actor_input = {"queryType": payload["search_sort"], "maxItems": max_items}
         if payload["source_mode"] == "profiles":
+            users = payload["profile_urls"]
             actor_input.update(
                 mode="profileTweets",
-                twitterHandles=payload["profile_urls"],
+                twitterHandles=users,
+                maxItemsPerTarget=ceil(max_items / max(1, len(users))),
                 tweetTypes={"excludeReplies": True, "excludeRetweets": True},
             )
         else:
@@ -129,7 +135,11 @@ class TwitterScraper(BaseScraper):
             params["maxTotalChargeUsd"] = self.config.apify_max_total_charge_usd
         try:
             resp = await self.client.post(
-                url, json=payload, params=params, headers={"Authorization": f"Bearer {token}"}, timeout=30.0
+                url,
+                json=payload,
+                params=params,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30.0,
             )
             resp.raise_for_status()
             data = resp.json()["data"]
@@ -160,16 +170,15 @@ class TwitterScraper(BaseScraper):
             try:
                 async with asyncio.timeout(remaining):
                     resp = await self.client.get(
-                        url, headers={"Authorization": f"Bearer {token}"}, timeout=min(10.0, remaining)
+                        url,
+                        headers={"Authorization": f"Bearer {token}"},
+                        timeout=min(10.0, remaining),
                     )
                 if time.monotonic() >= deadline:
                     break
                 resp.raise_for_status()
-                data = resp.json()["data"]
-                status = data["status"]
+                status = resp.json()["data"]["status"]
                 if status == "SUCCEEDED":
-                    if isinstance(cost := data.get("usageTotalUsd"), (int, float)):
-                        logger.info("Apify run cost: $%.6f", cost)
                     return True
                 if status in ("FAILED", "ABORTED", "TIMED-OUT"):
                     logger.error(f"Apify run {run_id} ended with status: {status}")

@@ -189,6 +189,7 @@ def test_xquik_batches_profiles_with_a_date_and_spending_limit(monkeypatch):
         "maxItems": 40,
         "mode": "profileTweets",
         "twitterHandles": ["OpenAIDevs", "claudeai"],
+        "maxItemsPerTarget": 20,
         "tweetTypes": {"excludeReplies": True, "excludeRetweets": True},
         "sinceTime": int(since.timestamp()),
     }]

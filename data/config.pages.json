@@ -29,7 +29,7 @@
       "enabled": true,
       "actor_id": "xquik~x-tweet-scraper",
       "apify_max_total_charge_usd": 0.05,
-      "users": ["OpenAI", "OpenAIDevs", "ChatGPTapp", "AnthropicAI", "claudeai", "GoogleDeepMind", "deepseek_ai"],
+      "users": ["OpenAI", "OpenAIDevs", "OpenAINewsroom", "AnthropicAI", "claudeai", "GoogleDeepMind", "deepseek_ai"],
       "fetch_limit": 40,
       "category": "ai",
       "profile": "tech-news"
@@ -104,7 +104,7 @@
     ],
     "google_news": {
       "enabled": true,
-      "query": "(Nasdaq OR \"AI stocks\" OR \"chip stocks\" OR Nvidia OR AMD OR Microsoft OR Alphabet OR Meta OR Amazon OR Apple OR TSMC OR ASML OR Alibaba OR Tencent OR Baidu) (earnings OR guidance OR \"capital spending\" OR regulation OR \"export controls\" OR acquisition OR IPO OR \"stock market\")",
+      "query": "(Nasdaq OR \"AI stocks\" OR \"chip stocks\" OR OpenAI OR Anthropic OR DeepSeek OR Nvidia OR AMD OR Microsoft OR Alphabet OR Meta OR Amazon OR Apple OR TSMC OR ASML OR Alibaba OR Tencent OR Baidu) (earnings OR guidance OR \"capital spending\" OR regulation OR \"export controls\" OR acquisition OR IPO OR \"stock market\")",
       "language": "en",
       "country": "US",
       "max_results": 12,
